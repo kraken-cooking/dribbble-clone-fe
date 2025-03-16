@@ -3,11 +3,23 @@ import Image from "next/image";
 import { Heart, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { IShot } from "@/types";
+import { useShotStore } from "@/stores/shot-store";
 
-export function ShotCard({ imageUrl, title, author, stats }: IShot) {
+export function ShotCard({ data }: { data: IShot }) {
+  const { imageUrl, title, author, stats } = data;
+
+  const updateShotDetail = useShotStore((state) => state.updateShotDetail);
+
+  const toggleCardDetail = () => {
+    updateShotDetail(data);
+  };
+
   return (
     <Card className="group overflow-hidden border-none rounded-xl p-0 gap-0">
-      <div className="relative w-full aspect-video overflow-hidden">
+      <div
+        className="relative w-full aspect-video overflow-hidden cursor-pointer"
+        onClick={toggleCardDetail}
+      >
         <Image src={imageUrl} alt={title} fill />
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
