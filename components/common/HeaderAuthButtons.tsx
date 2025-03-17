@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -16,6 +15,7 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 
 import { useAuthStore } from "@/stores/auth-store";
+import { redirect } from "next/navigation";
 
 export const HeaderAuthButtons = () => {
   const user = useAuthStore((state) => state.user);
@@ -24,6 +24,10 @@ export const HeaderAuthButtons = () => {
   const logout = useAuthStore((state) => state.logout);
 
   const isAuthenticated = Boolean(token);
+
+  const goProfile = () => {
+    redirect("/profile");
+  };
 
   return isAuthenticated ? (
     <div className="flex items-center gap-2">
@@ -36,7 +40,7 @@ export const HeaderAuthButtons = () => {
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuLabel>My Profile</DropdownMenuLabel>
+          <DropdownMenuItem onClick={goProfile}>My Profile</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
         </DropdownMenuContent>

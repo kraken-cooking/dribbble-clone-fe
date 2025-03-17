@@ -40,11 +40,11 @@ export function ShotCard({ data }: { data: IShot }) {
         <div className="flex items-center gap-3 col-span-1 justify-end">
           <div className="flex items-center gap-1">
             <Heart size={14} />
-            <span className="text-xs">{stats.likes}</span>
+            <span className="text-xs">{stats?.likes ?? 123}</span>
           </div>
           <div className="flex items-center gap-1">
             <Eye size={14} />
-            <span className="text-xs">{stats.views}</span>
+            <span className="text-xs">{stats?.views ?? 12300}</span>
           </div>
         </div>
       </div>

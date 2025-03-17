@@ -16,6 +16,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { AuthService } from "@/lib/services/auth";
+import axios from "axios";
+import { useAuthStore } from "@/stores/auth-store";
 
 const signUpSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -25,7 +28,12 @@ const signUpSchema = z.object({
 });
 
 const signInSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters").optional(),
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .optional(),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
@@ -37,38 +45,45 @@ export function AuthForm({ type }: AuthFormProps) {
   const router = useRouter();
   const schema = type === "signup" ? signUpSchema : signInSchema;
 
+  const authLogin = useAuthStore((state) => state.login);
+
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      username: "",
+      username: type === "signup" ? "" : undefined,
+      name: type === "signup" ? "" : undefined,
+      email: "",
       password: "",
-      ...(type === "signup" && {
-        name: "",
-        email: "",
-      }),
     },
   });
 
   async function onSubmit(values: z.infer<typeof schema>) {
     try {
-      const response = await fetch(`/api/auth/${type}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        throw new Error("Authentication failed");
-      }
-
+      let response;
       if (type === "signup") {
+        response = await AuthService.signUp({
+          username: values.username ?? "",
+          password: values.password,
+          email: values.email,
+        });
         toast.success("Account created successfully!");
         router.push("/signin");
       } else {
+        response = await AuthService.signIn({
+          email: values.email,
+          password: values.password,
+        });
+        const { user, token } = response;
+        authLogin(user, token);
         router.push("/");
       }
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+    } catch (error) {
+      let message = "Error";
+      if (axios.isAxiosError(error)) {
+        message = error.response?.data ?? error.message;
+      }
+
+      toast.error(`Something went wrong.Please try again. Message: ${message}`);
     }
   }
 
@@ -92,16 +107,12 @@ export function AuthForm({ type }: AuthFormProps) {
             />
             <FormField
               control={form.control}
-              name="email"
+              name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="john@example.com"
-                      type="email"
-                      {...field}
-                    />
+                    <Input placeholder="johndoe" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -109,14 +120,15 @@ export function AuthForm({ type }: AuthFormProps) {
             />
           </>
         )}
+
         <FormField
           control={form.control}
-          name="username"
+          name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="johndoe" {...field} />
+                <Input placeholder="john@example.com" type="email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

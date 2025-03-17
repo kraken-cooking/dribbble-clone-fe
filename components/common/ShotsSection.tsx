@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { IShot } from "@/types";
 import { ShotDetailDialog } from "./ShotDetailDialog";
 import { useShotStore } from "@/stores/shot-store";
+import { useAuthStore } from "@/stores/auth-store";
+import { ShotsService } from "@/lib/services/shot";
 
 const mockShot: IShot = {
   imageUrl: "/test.png",
@@ -25,18 +27,42 @@ const mockShot: IShot = {
 export const ShotsSection = ({ keyword }: { keyword?: string }) => {
   const [isLoading, setIsLoading] = useState(false);
 
+  const user = useAuthStore((state) => state.user);
+
   const updateShotDetail = useShotStore((state) => state.updateShotDetail);
 
   const [shots, setShots] = useState<IShot[]>([]);
 
   const LoadingArray = Array(30).fill(0);
 
+  const isHaveProfile = Boolean(user);
+
   useEffect(() => {
     setIsLoading(true);
 
+    const getShots = async () => {
+      const response = await ShotsService.getShots();
+      const shots: IShot[] = response.data.map((item) => ({
+        imageUrl: `${process.env.NEXT_PUBLIC_BACKEND_URL}${item.image_url}`,
+        title: item.title,
+        author: {
+          name: "John Designer",
+          avatar: "/default-avatar.png",
+        },
+        stats: {
+          likes: 124,
+          views: 1200,
+          comments: 8,
+        },
+      }));
+      setShots((state) => [...shots, ...state]);
+    };
+
+    getShots();
+
     setTimeout(() => {
-      setShots(LoadingArray.map((item) => mockShot));
       setIsLoading(false);
+      setShots((state) => [...state, ...LoadingArray.map((item) => mockShot)]);
     }, 2000);
   }, []);
 
@@ -61,19 +87,20 @@ export const ShotsSection = ({ keyword }: { keyword?: string }) => {
           <Loader2 className="animate-spin" />
           Load more
         </Button> */}
-          {/*
-        <Button
-          disabled
-          variant="outline"
-          className="font-semibold rounded-full"
-        >
-          Load more work
-        </Button>
-				*/}
 
-          <Button className="rounded-full font-semibold">
-            Sign up to continue
-          </Button>
+          {isHaveProfile ? (
+            <Button
+              disabled
+              variant="outline"
+              className="font-semibold rounded-full"
+            >
+              Load more work
+            </Button>
+          ) : (
+            <Button className="rounded-full font-semibold">
+              Sign up to continue
+            </Button>
+          )}
         </div>
       </section>
       <ShotDetailDialog />
